@@ -1,0 +1,166 @@
+---
+description: Contexte permanent du projet — refonte impactandprocess.fr
+alwaysApply: true
+---
+
+# AGENTS.md — Refonte impactandprocess.fr
+
+> Ce fichier est le contexte permanent du projet. Relis-le avant toute tâche.
+> Placer aussi en `.cursor/rules/project.mdc` avec `alwaysApply: true`.
+
+---
+
+## 1. Le projet en cinq lignes
+
+Site d'un coach sportif en ligne. Il remplace un WordPress/Elementor dont le tunnel de capture d'emails était cassé en production et dont rien n'était mesuré.
+
+**Le job du site :** transformer du trafic Instagram (lien en bio, 100 % mobile) en adresses email via des guides PDF gratuits, puis amener une partie de ces leads vers deux offres payantes.
+
+Tout le reste est secondaire. À chaque arbitrage, la question est : est-ce que ça sert la capture d'email ?
+
+**Cible :** hommes actifs 35-55 ans, débordés, qui ont laissé leur corps passer au second plan. Une seule cible sur tout le site, une seule promesse, un seul footer.
+*(À confirmer avant la phase 2 : l'ancien site portait deux promesses contradictoires selon les pages. Ne pas reproduire.)*
+
+**Ton :** pas de méthode miracle, pas de culpabilisation, pas de « transforme ta vie ». Concret, adulte, respectueux du temps du lecteur.
+
+---
+
+## 2. Stack
+
+- Next.js 16 · App Router · TypeScript strict
+- Tailwind
+- Supabase (Postgres + Storage bucket privé)
+- Resend + React Email
+- Stripe Checkout
+- Plausible ou Umami (sans cookies)
+- Contenu en MDX dans `src/content/`, validé par Zod au build
+- Déploiement Vercel
+
+---
+
+## 3. Règles non négociables
+
+Chacune vient d'un défaut constaté sur l'ancien site. Aucune n'est optionnelle.
+
+### Formulaires et capture
+
+1. **Formulaire inline, jamais en modale.** Le HTML du formulaire doit être présent dans la réponse serveur.
+2. Le formulaire doit **fonctionner sans JavaScript** (Server Action ou `<form action>` en fallback). L'ancien site avait un `SyntaxError` qui rendait toute la capture morte, sans que personne s'en aperçoive.
+3. **Une page `/merci/[slug]` réelle**, pas un état de composant. Sans URL de confirmation, aucune conversion n'est mesurable.
+4. Case de consentement newsletter **décochée par défaut** et **séparée** de la livraison du guide.
+5. Lien vers la politique de confidentialité **visible au point de collecte**, pas seulement en footer.
+6. Enregistrer `consent_text` : le libellé exact affiché au moment du clic, pas juste un booléen.
+7. Bouton explicite (« Recevoir mon guide »), jamais « Valider » ni « Envoyer ».
+8. Honeypot + rate limit sur chaque endpoint public.
+
+### SEO
+
+9. `generateMetadata()` sur **toutes** les routes : title, description, canonical, OpenGraph. L'ancien site n'avait aucune meta description et aucune balise OG — les partages Instagram/WhatsApp n'affichaient aucun aperçu.
+10. **Un seul `<h1>` par page**, toujours présent. Hiérarchie H1→H2→H3 sans saut.
+11. `alt` obligatoire sur toute image — typer le composant pour que TypeScript refuse le build sinon.
+12. Une FAQ se balise en `<h3>` + `<p>`, jamais en `<h6>` pour la question **et** la réponse.
+13. Sitemap généré depuis `src/content/`, jamais écrit à la main.
+14. Slugs définitifs et lisibles, jamais de `test` en production.
+
+### Accessibilité
+
+15. Focus clavier visible partout, jamais `outline: none` sans remplacement.
+16. `prefers-reduced-motion` respecté.
+17. Contraste minimum 4.5:1 sur le texte, y compris les mentions légales sous les formulaires.
+18. Pas d'emoji dans les titres (lus intégralement par les lecteurs d'écran).
+19. Lien d'évitement en début de page.
+
+### Sécurité et données
+
+20. Les PDF vivent dans un bucket **privé**. Accès uniquement par token à expiration via `/api/download/[token]`.
+21. Aucun accès `anon` à Supabase : RLS activé partout, tout passe par les route handlers en `service_role`.
+22. Jamais d'IP brute en base — hash uniquement.
+23. Aucun secret côté client. Toute clé sans `NEXT_PUBLIC_` reste serveur.
+24. En-têtes de sécurité dans `next.config.ts` : HSTS, `nosniff`, `Referrer-Policy`, `frame-ancestors`.
+
+### Performance
+
+25. `next/image` partout, jamais de `<img>` brut.
+26. Polices **auto-hébergées** via `next/font/local`, 3 graisses maximum, `display: swap`. Aucun appel à `fonts.googleapis.com`.
+27. Server Components par défaut. `"use client"` seulement sur les composants réellement interactifs, et le plus bas possible dans l'arbre.
+28. Cibles : JS transféré < 50 Ko, LCP mobile < 1,5 s, Lighthouse 95+ sur les 4 axes.
+
+---
+
+## 4. Interdits
+
+- Pas de librairie de composants (shadcn, MUI, Chakra). Les composants sont écrits à la main dans `components/ui/`.
+- Pas de librairie d'animation lourde. CSS et Web Animations API suffisent.
+- Pas de `localStorage` pour des données de formulaire.
+- Pas de `any`, pas de `@ts-ignore`.
+- Pas de `useEffect` pour du data fetching — c'est un Server Component qui manquait.
+- Pas de barrel files (`index.ts` qui réexporte tout).
+- Pas de commentaire qui paraphrase le code.
+- Pas de contenu placeholder livré en production (l'ancien site affichait une carte « À VENIR 🤝 »).
+
+---
+
+## 5. Direction artistique
+
+Une seule contrainte forte : **ne pas produire le design par défaut**. Trois directions à éviter parce qu'elles apparaissent quel que soit le brief :
+
+- fond crème (~#F4F1EA) + serif à fort contraste + accent terracotta
+- fond noir + un seul accent vert acide ou vermillon
+- mise en page « journal » à filets fins, zéro border-radius, colonnes denses
+
+Le matériau du projet, c'est l'**effort régulier et mesurable** : la semaine qui déraille et qu'on rattrape, la progression lente, la contrainte de temps. Cherche la signature là-dedans, pas dans le vocabulaire fitness générique (haltères, flammes, dégradés orange).
+
+Avant de coder l'UI, produis un plan compact : 4-6 couleurs nommées avec leur hex, 2 familles typographiques avec leur rôle, un concept de mise en page en une phrase, et **un** élément signature. Relis ce plan : si une partie ressemble à ce que tu produirais pour n'importe quel site de coach, change-la et dis pourquoi.
+
+Concentre l'audace sur l'élément signature. Tout le reste reste calme.
+
+Mobile d'abord, toujours : la quasi-totalité du trafic vient d'un lien en bio Instagram.
+
+---
+
+## 6. Conventions
+
+- Fichiers en `kebab-case`, composants en `PascalCase`.
+- Un composant par fichier, `export function` nommé (pas de `export default` hors pages Next).
+- Validation Zod à toute frontière : formulaires, route handlers, frontmatter MDX, variables d'env.
+- Les types partagés vivent dans `lib/types.ts`, jamais dupliqués.
+- Textes en français, avec les apostrophes typographiques (`’`) et les espaces insécables avant `: ; ! ?`.
+- Prix en centimes en base, formatés à l'affichage.
+
+---
+
+## 7. Definition of done
+
+Une tâche n'est terminée que si :
+
+- [ ] `pnpm build` passe sans warning
+- [ ] `tsc --noEmit` passe en mode strict
+- [ ] La page a un `h1` unique et une `generateMetadata` complète
+- [ ] Toutes les images ont un `alt` non vide
+- [ ] Le parcours est utilisable au clavier seul, focus visible
+- [ ] Testé à 375 px de large
+- [ ] Aucune erreur en console
+- [ ] Pour un formulaire : cas de succès, cas d'erreur réseau, cas de doublon d'email, et soumission JS désactivé
+
+---
+
+## 8. Notes d'implémentation propres à Next 16
+
+- Le projet tourne sur **Next 16.3**. La convention `middleware.ts` y est dépréciée : le fichier
+  s'appelle **`src/proxy.ts`** et exporte une fonction **`proxy`**. Partout où les prompts de build
+  disent « middleware », lire « proxy ».
+- Les redirections permanentes sont écrites avec `statusCode: 301` (et non `permanent: true`, qui
+  produirait un 308).
+- Le `410 Gone` n'est pas exprimable dans `next.config.ts` : il est servi depuis `src/proxy.ts`.
+- `src/lib/env.ts` est importé par `next.config.ts` : une variable d'environnement manquante fait
+  échouer le build, pas seulement le runtime.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

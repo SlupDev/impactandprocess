@@ -20,8 +20,8 @@ export function generateMetadata(): Metadata {
 
 export default function HomePage() {
   return (
-    <main>
-      <h1>Impact &amp; Process</h1>
+    <main id="contenu" className="site-container py-section">
+      <h1 className="text-display font-black italic">Impact &amp; Process</h1>
     </main>
   )
 }

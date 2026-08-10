@@ -1,18 +1,135 @@
 @import 'tailwindcss';
 
-/* Les design tokens (palette, typographie, échelle) arrivent en phase 1. */
+/*
+  Palette reprise du site existant (styles calculés sur impactandprocess.fr).
+  Une seule couleur ajoutée : `creme`, une teinte du jaune de marque.
 
-:root {
-  color-scheme: light;
+  Contrastes vérifiés :
+    noir sur jaune       15,8:1
+    jaune sur nuit        9,8:1
+    blanc sur nuit       12,9:1
+    nuit sur blanc       12,9:1
+    ardoise sur blanc     4,9:1
+  Le jaune ne passe JAMAIS en texte sur fond clair (1,3:1) : fond ou rien.
+*/
+
+@theme {
+  --color-nuit: #1d3250;
+  --color-nuit-fonce: #16263d;
+  --color-jaune: #ffde59;
+  --color-jaune-fonce: #ffd42e;
+  --color-noir: #000000;
+  --color-blanc: #ffffff;
+  --color-gris: #f3f3f3;
+  --color-ardoise: #69727d;
+  --color-creme: #fff8e4;
+  --color-trait: rgb(29 50 80 / 0.14);
+
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+
+  /* Échelle fluide : la même déclaration sert du 375 px au grand écran. */
+  --text-display: clamp(2rem, 1.5rem + 2.2vw, 3.5rem);
+  --text-display--line-height: 1.08;
+  --text-display--letter-spacing: -0.02em;
+
+  --text-h2: clamp(1.5rem, 1.3rem + 1.1vw, 2.25rem);
+  --text-h2--line-height: 1.15;
+  --text-h2--letter-spacing: -0.02em;
+
+  --text-h3: clamp(1.25rem, 1.15rem + 0.5vw, 1.5rem);
+  --text-h3--line-height: 1.25;
+  --text-h3--letter-spacing: -0.01em;
+
+  --text-lede: clamp(1.0625rem, 1rem + 0.35vw, 1.25rem);
+  --text-lede--line-height: 1.6;
+
+  --text-body: clamp(1.0625rem, 1.03rem + 0.15vw, 1.125rem);
+  --text-body--line-height: 1.6;
+
+  /* Plancher du site : rien ne descend sous 15 px, mentions légales comprises. */
+  --text-small: 0.9375rem;
+  --text-small--line-height: 1.5;
+
+  --text-chip: 0.8125rem;
+  --text-chip--line-height: 1.2;
+  --text-chip--letter-spacing: 0.08em;
+
+  --radius-card: 1.25rem;
+  --radius-field: 0.75rem;
+  --radius-pill: 9999px;
+
+  --shadow-card: 0 2px 14px rgb(29 50 80 / 0.07);
+
+  --spacing-section: clamp(2.25rem, 1.5rem + 3vw, 5rem);
+  --container-site: 72rem;
+  --container-prose: 40rem;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-blanc);
+    color: var(--color-nuit);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+  }
+
+  /* Règle 15 : jamais d’outline supprimé sans remplacement. */
+  :focus-visible {
+    outline: 3px solid var(--color-nuit);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  /* Règle 16. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* Règle 19 : lien d’évitement, visible uniquement au clavier. */
+  .skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 0.5rem;
+    z-index: 50;
+    border-radius: var(--radius-pill);
+    background-color: var(--color-jaune);
+    padding: 0.875rem 1.25rem;
+    font-weight: 700;
+    color: var(--color-noir);
+  }
+
+  .skip-link:focus {
+    left: 0.5rem;
+  }
+
+  .site-container {
+    margin-inline: auto;
+    width: 100%;
+    max-width: var(--container-site);
+    padding-inline: 1.25rem;
+  }
+
+  @media (min-width: 48rem) {
+    .site-container {
+      padding-inline: 2rem;
+    }
   }
 }

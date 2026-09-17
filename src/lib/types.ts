@@ -4,7 +4,7 @@ export type KcalVariant = '1800' | '2100'
 
 export type OrderStatus = 'pending' | 'paid' | 'refunded' | 'failed'
 
-export interface LeadRow {
+export type LeadRow = {
   id: string
   email: string
   first_name: string | null
@@ -32,7 +32,7 @@ export type LeadInsert = Omit<
 > &
   Partial<Pick<LeadRow, 'id' | 'unsubscribe_token' | 'unsubscribed_at' | 'consent_at'>>
 
-export interface LeadDownloadRow {
+export type LeadDownloadRow = {
   id: string
   lead_id: string
   guide_slug: string
@@ -51,7 +51,7 @@ export type LeadDownloadInsert = Omit<
 > &
   Partial<Pick<LeadDownloadRow, 'id' | 'expires_at'>>
 
-export interface OrderRow {
+export type OrderRow = {
   id: string
   lead_id: string | null
   email: string
@@ -70,9 +70,23 @@ export interface OrderRow {
 export type OrderInsert = Omit<OrderRow, 'id' | 'created_at' | 'updated_at'> &
   Partial<Pick<OrderRow, 'id'>>
 
-export interface Database {
+export type RateLimitRow = {
+  id: number
+  bucket: string
+  ip_hash: string
+  created_at: string
+}
+
+export type Database = {
+  __InternalSupabase: { PostgrestVersion: '12' }
   public: {
     Tables: {
+      rate_limits: {
+        Row: RateLimitRow
+        Insert: Omit<RateLimitRow, 'id' | 'created_at'> & Partial<Pick<RateLimitRow, 'created_at'>>
+        Update: Partial<Omit<RateLimitRow, 'id'>>
+        Relationships: []
+      }
       leads: {
         Row: LeadRow
         Insert: LeadInsert
@@ -82,7 +96,7 @@ export interface Database {
       lead_downloads: {
         Row: LeadDownloadRow
         Insert: LeadDownloadInsert
-        Update: Partial<LeadDownloadInsert>
+        Update: Partial<Omit<LeadDownloadRow, 'id' | 'created_at'>>
         Relationships: []
       }
       orders: {
@@ -93,7 +107,17 @@ export interface Database {
       }
     }
     Views: Record<never, never>
-    Functions: Record<never, never>
+    Functions: {
+      consume_rate_limit: {
+        Args: {
+          p_bucket: string
+          p_ip_hash: string
+          p_limit: number
+          p_window: string
+        }
+        Returns: number
+      }
+    }
     Enums: {
       order_status: OrderStatus
     }

@@ -22,7 +22,6 @@ const serverEnvSchema = z.object({
   CALENDLY_URL: z.url(),
 
   IP_HASH_SALT: z.string().min(32),
-  DOWNLOAD_TOKEN_SECRET: z.string().min(32),
 })
 
 const clientEnvSchema = z.object({
